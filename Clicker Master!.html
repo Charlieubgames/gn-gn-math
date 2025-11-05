@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Clicker Empire</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel-bg: #111;
+            --text: #0f0;
+            --text-dim: #0a0;
+            --accent: #0f0;
+            --border: #0f0;
+            --button: #222;
+            --button-hover: #333;
+            --button-active: #444;
+            --gold: #ff0;
+            --red: #f44;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.1),
+                rgba(0,0,0,0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 3px solid var(--border);
+        }
+
+        h1 {
+            font-size: 36px;
+            text-shadow: 0 0 10px var(--accent);
+            margin-bottom: 20px;
+            animation: flicker 3s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.98; }
+        }
+
+        #clickButton {
+            width: 180px;
+            height: 180px;
+            background: var(--button);
+            border: 4px solid var(--border);
+            border-radius: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text);
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--accent);
+            transition: all 0.1s;
+            margin: 30px 0;
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        #clickButton:hover {
+            background: var(--button-hover);
+            box-shadow: 0 0 30px var(--accent);
+        }
+
+        #clickButton:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 40px var(--accent);
+        }
+
+        .stats {
+            margin: 20px 0;
+            font-size: 22px;
+            text-align: center;
+            text-shadow: 0 0 5px var(--accent);
+        }
+
+        .stats p {
+            margin: 8px 0;
+        }
+
+        .prestige-info {
+            margin: 15px 0;
+            padding: 12px;
+            background: #000;
+            border: 2px solid var(--gold);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            color: var(--gold);
+            text-shadow: 0 0 8px var(--gold);
+        }
+
+        #prestigeButton {
+            background: var(--red);
+            color: #fff;
+            border: 3px solid var(--gold);
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 0 20px var(--gold);
+            transition: all 0.2s;
+        }
+
+        #prestigeButton:hover {
+            background: #c33;
+            box-shadow: 0 0 30px var(--gold);
+        }
+
+        #prestigeButton:disabled {
+            background: #444;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+            border-color: #666;
+        }
+
+        .upgrade-panel {
+            width: 480px;
+            background: var(--panel-bg);
+            border-left: 3px solid var(--border);
+            overflow-y: auto;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tier-header {
+            background: #000;
+            color: var(--accent);
+            padding: 12px;
+            margin: 18px 0 10px 0;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid var(--border);
+            text-shadow: 0 0 8px var(--accent);
+            font-size: 19px;
+        }
+
+        .upgrade {
+            background: var(--button);
+            border: 2px solid var(--border);
+            margin: 8px 0;
+            padding: 14px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            position: relative;
+            line-height: 1.5;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .upgrade:hover {
+            background: var(--button-hover);
+            box-shadow: 0 0 18px var(--accent);
+            transform: translateX(3px);
+        }
+
+        .upgrade:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        .upgrade-name {
+            font-weight: bold;
+            color: var(--text);
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        .upgrade-effect {
+            font-size: 13px;
+            color: #0ff;
+            margin: 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .upgrade-cost {
+            font-size: 13px;
+            color: #ff0;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .upgrade-level {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 12px;
+            color: #0ff;
+            background: #000;
+            padding: 3px 8px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .login-box {
+            background: #000;
+            border: 3px solid var(--accent);
+            padding: 30px;
+            width: 380px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px var(--accent);
+        }
+
+        .login-box h2 {
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #111;
+            border: 2px solid var(--border);
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+
+        .login-box button {
+            width: 48%;
+            padding: 12px;
+            margin: 10px 1%;
+            background: var(--accent);
+            color: #000;
+            border: 2px solid var(--border);
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .login-box button:hover {
+            background: #0f0;
+            box-shadow: 0 0 15px #0f0;
+        }
+
+        .login-box .logout {
+            background: var(--red);
+            color: #fff;
+            margin-top: 20px;
+        }
+
+        .login-box .logout:hover {
+            background: #f44;
+        }
+
+        .upgrade-panel::-webkit-scrollbar {
+            width: 14px;
+        }
+
+        .upgrade-panel::-webkit-scrollbar-track {
+            background: #000;
+            border: 1px solid var(--border);
+        }
+
+        .upgrade-panel::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal active">
+        <div class="login-box">
+            <h2>RETRO CLICKER</h2>
+            <input type="text" id="username" placeholder="Username" maxlength="20">
+            <input type="password" id="password" placeholder="Password" maxlength="30">
+            <button id="loginBtn">LOG IN</button>
+            <button id="signupBtn">SIGN UP</button>
+            <button id="guestBtn" style="background:#444;">PLAY AS GUEST</button>
+            <button id="logoutBtn" class="logout" style="display:none;">LOG OUT</button>
+            <p id="loginMessage" style="margin-top:15px; color:#f88; min-height:20px;"></p>
+        </div>
+    </div>
+
+    <div class="container" id="gameContainer" style="display:none;">
+        <!-- Left: Game -->
+        <div class="game-panel">
+            <h1>RETRO CLICKER</h1>
+            <p style="color:#0ff; font-size:14px;">Welcome, <span id="welcomeUser">Guest</span>!</p>
+            
+            <div class="stats">
+                <p>SCORE: <span id="score">0</span></p>
+                <p>CPS: <span id="cps">0.0</span></p>
+                <p>CLICK POWER: <span id="clickPower">1.0</span></p>
+                <p>PRESTIGE: <span id="prestigeCount">0</span></p>
+            </div>
+
+            <button id="clickButton">CLICK!</button>
+
+            <div class="prestige-info">
+                <p>Next Prestige: <span id="nextPrestige">10M</span></p>
+                <p>Bonus: <span id="prestigeBonus">+0%</span></p>
+            </div>
+            <button id="prestigeButton" disabled>PRESTIGE</button>
+        </div>
+
+        <!-- Right: Upgrades -->
+        <div class="upgrade-panel" id="upgradePanel">
+            <!-- Upgrades injected by JS -->
+        </div>
+    </div>
+
+    <script>
+        // === AUTH & STORAGE ===
+        const STORAGE_KEY = 'retroClicker_users';
+        let currentUser = null;
+
+        function loadUsers() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch (e) {
+                console.error("Failed to load users:", e);
+                return {};
+            }
+        }
+
+        function saveUsers(users) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+            } catch (e) {
+                console.error("Failed to save users:", e);
+            }
+        }
+
+        function hash(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = (h * 31 + str.charCodeAt(i)) & 0xFFFFFFFF;
+            }
+            return h.toString(16);
+        }
+
+        // === DOM ELEMENTS ===
+        const modal = document.getElementById('loginModal');
+        const gameContainer = document.getElementById('gameContainer');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const guestBtn = document.getElementById('guestBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginMessage = document.getElementById('loginMessage');
+        const welcomeUser = document.getElementById('welcomeUser');
+
+        const scoreEl = document.getElementById('score');
+        const cpsEl = document.getElementById('cps');
+        const clickPowerEl = document.getElementById('clickPower');
+        const prestigeCountEl = document.getElementById('prestigeCount');
+        const nextPrestigeEl = document.getElementById('nextPrestige');
+        const prestigeBonusEl = document.getElementById('prestigeBonus');
+        const prestigeBtn = document.getElementById('prestigeButton');
+        const clickBtn = document.getElementById('clickButton');
+        const upgradePanel = document.getElementById('upgradePanel');
+
+        // === GAME STATE ===
+        let score = 0;
+        let clickPower = 1;
+        let cps = 0;
+        let prestigeCount = 0;
+        let prestigeBonus = 1;
+        let prestigeThreshold = 10000000;
+
+        const TIERS = 10;
+        const PER_TIER = 100;
+        const MAX_LEVEL = 2000;
+        const upgrades = [];
+
+        // Word banks
+        const prefixes = ['Quantum', 'Mega', 'Ultra', 'Hyper', 'Giga', 'Tera', 'Peta', 'Exa', 'Zetta', 'Yotta',
+                          'Nano', 'Micro', 'Milli', 'Kilo', 'Atomic', 'Plasma', 'Fusion', 'Laser', 'Photon', 'Neutron'];
+        const nouns = ['Core', 'Reactor', 'Engine', 'Booster', 'Amplifier', 'Generator', 'Converter', 'Matrix', 'Grid', 'Node',
+                       'Circuit', 'Capacitor', 'Transistor', 'Resonator', 'Oscillator', 'Modulator', 'Demodulator', 'Filter', 'Relay', 'Switch'];
+        const effects = ['Click', 'Auto'];
+
+        // === AUTH FUNCTIONS ===
+        function showMessage(msg, isError = true) {
+            loginMessage.textContent = msg;
+            loginMessage.style.color = isError ? '#f88' : '#8f8';
+        }
+
+        function login(username, password) {
+            const users = loadUsers();
+            const hashPass = hash(password);
+            if (users[username] && users[username].password === hashPass) {
+                currentUser = username;
+                loadGameData(users[username].game || getDefaultGameData());
+                showGame();
+                showMessage("Login successful!", false);
+                setTimeout(() => loginMessage.textContent = '', 2000);
+                return true;
+            }
+            showMessage("Invalid username or password");
+            return false;
+        }
+
+        function signup(username, password) {
+            if (username.length < 3 || password.length < 4) {
+                showMessage("Username >=3, Password >=4 chars");
+                return false;
+            }
+            const users = loadUsers();
+            if (users[username]) {
+                showMessage("Username already taken!");
+                return false;
+            }
+            users[username] = {
+                password: hash(password),
+                game: getDefaultGameData()
+            };
+            saveUsers(users);
+            showMessage("Account created! Logging in...", false);
+            setTimeout(() => login(username, password), 1000);
+            return true;
+        }
+
+        function logout() {
+            if (currentUser) {
+                saveGame();
+            }
+            currentUser = null;
+            modal.classList.add('active');
+            gameContainer.style.display = 'none';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            showMessage('');
+        }
+
+        function playAsGuest() {
+            currentUser = null;
+            loadGameData(getDefaultGameData());
+            showGame();
+            showMessage("Playing as Guest (no save)", false);
+            setTimeout(() => loginMessage.textContent = '', 3000);
+        }
+
+        function showGame() {
+            modal.classList.remove('active');
+            gameContainer.style.display = 'flex';
+            welcomeUser.textContent = currentUser || 'Guest';
+            logoutBtn.style.display = currentUser ? 'block' : 'none';
+            updateDisplay();
+        }
+
+        // === GAME DATA ===
+        function getDefaultGameData() {
+            return {
+                score: 0,
+                clickPower: 1,
+                cps: 0,
+                prestigeCount: 0,
+                prestigeThreshold: 10000000,
+                upgrades: []
+            };
+        }
+
+        function loadGameData(data) {
+            score = data.score || 0;
+            clickPower = data.clickPower || 1;
+            cps = data.cps || 0;
+            prestigeCount = data.prestigeCount || 0;
+            prestigeThreshold = data.prestigeThreshold || 10000000;
+            prestigeBonus = 1 + (prestigeCount * 0.1);
+            clickPower *= prestigeBonus;
+            cps *= prestigeBonus;
+
+            upgrades.length = 0;
+            upgradePanel.innerHTML = '';
+            initUpgrades();
+
+            if (data.upgrades && data.upgrades.length > 0) {
+                data.upgrades.forEach(saved => {
+                    const upg = upgrades.find(u => u.id === saved.id);
+                    if (upg) {
+                        upg.level = saved.level;
+                        if (upg.type === 'cps') cps += upg.powerPerLevel * upg.level;
+                        else clickPower += upg.powerPerLevel * upg.level;
+                    }
+                });
+            }
+            updateAllUpgrades();
+            updatePrestige();
+        }
+
+        function saveGame() {
+            if (!currentUser) return;
+            const users = loadUsers();
+            users[currentUser].game = {
+                score,
+                clickPower: 1,
+                cps: 0,
+                prestigeCount,
+                prestigeThreshold,
+                upgrades: upgrades.map(u => ({ id: u.id, level: u.level }))
+            };
+            saveUsers(users);
+        }
+
+        // === UPGRADES ===
+        function initUpgrades() {
+            let id = 0;
+            for (let tier = 1; tier <= TIERS; tier++) {
+                const header = document.createElement('div');
+                header.className = 'tier-header';
+                header.textContent = `TIER ${tier} UPGRADES`;
+                upgradePanel.appendChild(header);
+
+                // Track last power for this tier
+                let lastPower = 0.15; // First upgrade in Tier 1 starts at 0.15
+
+                for (let i = 0; i < PER_TIER; i++) {
+                    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+                    const effect = effects[Math.floor(Math.random() * effects.length)];
+
+                    // Base cost: 50% cheaper than before
+                    const baseCost = Math.pow(10, tier) * 100 * (i + 1) * 0.5;
+
+                    // Power: 1.5x the previous upgrade
+                    const powerPerLevel = lastPower;
+
+                    // Update lastPower for next upgrade
+                    lastPower *= 1.5;
+
+                    const costMultiplier = 1.15 + (tier * 0.05);
+
+                    const upgrade = {
+                        id: id++,
+                        tier,
+                        name: `${prefix} ${noun} ${effect}`,
+                        baseCost,
+                        costMultiplier,
+                        powerPerLevel,
+                        level: 0,
+                        type: effect === 'Auto' ? 'cps' : 'click',
+                        element: null
+                    };
+
+                    upgrades.push(upgrade);
+                    createUpgradeElement(upgrade);
+                }
+            }
+        }
+
+        function createUpgradeElement(upgrade) {
+            const div = document.createElement('div');
+            div.className = 'upgrade';
+            div.dataset.id = upgrade.id;
+
+            const effectText = upgrade.type === 'cps' 
+                ? `+${upgrade.powerPerLevel.toFixed(3)} CPS per level`
+                : `+${upgrade.powerPerLevel.toFixed(3)} per click`;
+
+            div.innerHTML = `
+                <span class="upgrade-name" title="${upgrade.name}">${upgrade.name}</span>
+                <span class="upgrade-effect" title="${effectText}">${effectText}</span>
+                <span class="upgrade-cost">Cost: <span class="cost-value">${formatNumber(upgrade.baseCost)}</span></span>
+                <span class="upgrade-level">0</span>
+            `;
+
+            div.addEventListener('click', () => buyUpgrade(upgrade));
+            upgrade.element = div;
+            upgradePanel.appendChild(div);
+        }
+
+        function buyUpgrade(upgrade) {
+            if (upgrade.level >= MAX_LEVEL) return;
+            const cost = getUpgradeCost(upgrade);
+            if (score < cost) return;
+
+            score -= cost;
+            upgrade.level++;
+
+            if (upgrade.type === 'cps') {
+                cps += upgrade.powerPerLevel;
+            } else {
+                clickPower += upgrade.powerPerLevel;
+            }
+
+            updateUpgradeElement(upgrade);
+            updateDisplay();
+            saveGame();
+        }
+
+        function getUpgradeCost(upgrade) {
+            return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMultiplier, upgrade.level));
+        }
+
+        function updateUpgradeElement(upgrade) {
+            const el = upgrade.element;
+            const nextCost = getUpgradeCost(upgrade);
+            el.querySelector('.cost-value').textContent = formatNumber(nextCost);
+            el.querySelector('.upgrade-level').textContent = upgrade.level;
+            const canAfford = score >= nextCost && upgrade.level < MAX_LEVEL;
+            el.style.opacity = canAfford ? '1' : '0.4';
+        }
+
+        function updateAllUpgrades() {
+            upgrades.forEach(updateUpgradeElement);
+        }
+
+        // === PRESTIGE ===
+        function updatePrestige() {
+            nextPrestigeEl.textContent = formatNumber(prestigeThreshold);
+            prestigeCountEl.textContent = prestigeCount;
+            prestigeBonusEl.textContent = `+${((prestigeBonus - 1) * 100).toFixed(1)}%`;
+            prestigeBtn.disabled = score < prestigeThreshold;
+            prestigeBtn.textContent = score >= prestigeThreshold ? 'PRESTIGE NOW!' : 'PRESTIGE';
+        }
+
+        function prestige() {
+            if (score < prestigeThreshold) return;
+
+            prestigeCount++;
+            prestigeBonus = 1 + (prestigeCount * 0.1);
+            prestigeThreshold = Math.floor(prestigeThreshold * 10.67);
+
+            score = 0;
+            clickPower = 1 * prestigeBonus;
+            cps = 0;
+
+            upgrades.forEach(u => {
+                u.level = 0;
+                updateUpgradeElement(u);
+            });
+
+            updateDisplay();
+            updatePrestige();
+            saveGame();
+        }
+
+        // === DISPLAY ===
+        function updateDisplay() {
+            scoreEl.textContent = formatNumber(Math.floor(score));
+            cpsEl.textContent = formatNumber(cps.toFixed(1));
+            clickPowerEl.textContent = formatNumber(clickPower.toFixed(1));
+            updatePrestige();
+        }
+
+        function formatNumber(num) {
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // === EVENT LISTENERS ===
+        loginBtn.addEventListener('click', () => {
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value;
+            if (!user || !pass) {
+                showMessage("Enter username & password");
+                return;
+            }
+            login(user, pass);
+        });
+
+        signupBtn.addEventListener('click', () => {
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value;
+            if (!user || !pass) {
+                showMessage("Enter username & password");
+                return;
+            }
+            signup(user, pass);
+        });
+
+        guestBtn.addEventListener('click', playAsGuest);
+        logoutBtn.addEventListener('click', logout);
+        prestigeBtn.addEventListener('click', prestige);
+
+        clickBtn.addEventListener('click', () => {
+            score += clickPower;
+            updateDisplay();
+            saveGame();
+        });
+
+        setInterval(() => {
+            if (cps > 0) {
+                score += cps;
+                updateDisplay();
+                saveGame();
+            }
+        }, 1000);
+
+        setInterval(() => {
+            document.body.style.filter = Math.random() > 0.98 ? 'brightness(1.05)' : 'brightness(1)';
+        }, 100);
+
+        [usernameInput, passwordInput].forEach(input => {
+            input.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    loginBtn.click();
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initUpgrades();
+            modal.classList.add('active');
+        });
+    </script>
+</body>
+</html>
